@@ -4,6 +4,7 @@
 " License:		see in viewdoc.vim
 " URL:			see in viewdoc.vim
 " Description: ViewDoc handler for vim help files
+" TODO Add auto-detection based on context/syntax.
 
 if exists('g:loaded_viewdoc_help') || &cp || version < 700
 	finish
@@ -17,7 +18,8 @@ command -bar -bang -nargs=1 -complete=help ViewDocHelp
 	\ call ViewDoc('<bang>'=='' ? 'new' : 'doc', <f-args>, 'help')
 " - abbrev
 if !exists('g:no_plugin_abbrev') && !exists('g:no_viewdoc_abbrev')
-	cabbrev <expr> help     getcmdtype()==':' && getcmdline()=='help' ? 'ViewDocHelp' : 'help'
+	cabbrev <expr> help     getcmdtype()==':' && getcmdline()=='help'  ? 'ViewDocHelp' : 'help'
+	cabbrev <expr> help!    getcmdtype()==':' && getcmdline()=='help!' ? 'ViewDocHelp' : 'help!'
 endif
 
 """ Handlers
@@ -47,7 +49,7 @@ function g:ViewDoc_help_custom(topic, ft, ...)
 		\ 'docft':	a:ft,
 		\ }
 	let savetabnr	= tabpagenr()
-	for helpfile in split(globpath(&runtimepath, 'doc/'.a:ft.'/*.txt'),"\<NL>")
+	for helpfile in split(globpath(&runtimepath, 'ftdoc/'.a:ft.'/*.txt'),"\<NL>")
 		let tagsfile	= substitute(helpfile, '/[^/]*$', '/tags', '')
 		execute 'tabedit ' . helpfile
 		execute 'setlocal tags^=' . tagsfile
@@ -63,6 +65,7 @@ function g:ViewDoc_help_custom(topic, ft, ...)
 			let h.tags	= tagsfile
 			break
 		endfor
+		setlocal bufhidden=delete
 		tabclose
 		if exists('h.cmd')
 			break

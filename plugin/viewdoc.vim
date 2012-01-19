@@ -1,6 +1,6 @@
 " Maintainer: Alex Efros <powerman-asdf@ya.ru>
-" Version: 1.0
-" Last Modified: Jan 18, 2012
+" Version: 1.1
+" Last Modified: Jan 19, 2012
 " License: This file is placed in the public domain.
 " URL: http://www.vim.org/scripts/script.php?script_id=3893
 " Description: Flexible viewer for any documentation (help/man/perldoc/etc.)
@@ -16,13 +16,19 @@ let s:bufname = '[Doc]'
 
 """ Options
 if !exists('g:viewdoc_open')
-	let g:viewdoc_open='tabnew'		" 'topleft new', 'belowright vnew', 'tabnew', etc.
+	let g:viewdoc_open='tabnew'
 endif
 if !exists('g:viewdoc_only')
 	let g:viewdoc_only=0
 endif
 if !exists('g:viewdoc_prevtabonclose')
 	let g:viewdoc_prevtabonclose=1
+endif
+if !exists('g:viewdoc_openempty')
+	let g:viewdoc_openempty=1
+endif
+if !exists('g:viewdoc_dontswitch')
+	let g:viewdoc_dontswitch=0
 endif
 
 """ Interface
@@ -32,6 +38,7 @@ command -bar -bang -nargs=+ ViewDoc
 " - abbrev
 if !exists('g:no_plugin_abbrev') && !exists('g:no_viewdoc_abbrev')
 	cabbrev <expr> doc      getcmdtype()==':' && getcmdline()=='doc'  ? 'ViewDoc'	  : 'doc'
+	cabbrev <expr> doc!     getcmdtype()==':' && getcmdline()=='doc!' ? 'ViewDoc!'	  : 'doc!'
 endif
 " - map
 if !exists('g:no_plugin_maps') && !exists('g:no_viewdoc_maps')
@@ -47,6 +54,7 @@ function ViewDoc(target, topic, ...)
 	let h = s:GetHandle(a:topic, a:0 > 0 ? a:1 : &ft)
 
 	if a:target != 'inplace'
+		let prev_tabpagenr = tabpagenr()
 		call s:OpenBuf(a:target)
 		let b:stack = 0
 	endif
@@ -70,10 +78,6 @@ function ViewDoc(target, topic, ...)
 		let b:docft = h.docft
 	endif
 
-	if line('$') == 1 && col('$') == 1
-		redraw | echohl ErrorMsg | echo 'Sorry, no doc for' h.topic | echohl None
-	endif
-
 	inoremap <silent> <buffer> q		<C-O>:call <SID>CloseBuf()<CR>
 	nnoremap <silent> <buffer> q		:call <SID>CloseBuf()<CR>
 	vnoremap <silent> <buffer> q		<Esc>:call <SID>CloseBuf()<CR>
@@ -85,6 +89,31 @@ function ViewDoc(target, topic, ...)
 	imap <silent> <buffer> <BS>		<C-O><C-T>
 	nmap <silent> <buffer> <CR>		<C-]>
 	nmap <silent> <buffer> <BS>		<C-T>
+
+	let is_empty = line('$') == 1 && col('$') == 1
+
+	if is_empty && !g:viewdoc_openempty
+		if a:target == 'inplace'
+			call s:Prev()
+		else
+			call s:CloseBuf()
+			unlet! prev_tabpagenr
+		endif
+	endif
+
+	if g:viewdoc_dontswitch && exists('prev_tabpagenr')
+		if prev_tabpagenr != tabpagenr()
+			execute 'tabnext ' . prev_tabpagenr
+		elseif winnr('$') > 1
+			execute "normal \<C-W>p"
+		else
+			execute "normal \<C-^>"
+		endif
+	endif
+
+	if is_empty
+		redraw | echohl ErrorMsg | echo 'Sorry, no doc for' h.topic | echohl None
+	endif
 endfunction
 
 
@@ -129,6 +158,11 @@ function s:Prev()
 		undo
 		setlocal nomodifiable
 		normal 'tzt`s
+		" XXX man page syntax _partially_ switched off after Prev(),
+		" I've no idea why this happens, so just force it again
+		if exists('g:syntax_on')
+			syntax on
+		endif
 	endif
 endfunction
 
