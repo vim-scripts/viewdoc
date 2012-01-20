@@ -1,5 +1,5 @@
 " Maintainer: Alex Efros <powerman-asdf@ya.ru>
-" Version: 1.1
+" Version: 1.2
 " Last Modified: Jan 19, 2012
 " License: This file is placed in the public domain.
 " URL: http://www.vim.org/scripts/script.php?script_id=3893
@@ -66,6 +66,9 @@ function ViewDoc(target, topic, ...)
 		silent $d
 		execute 'normal ' . (exists('h.line') ? h.line : 1) . 'G'
 		execute 'normal ' . (exists('h.col')  ? h.col  : 1) . '|'
+		if exists('h.search')
+			call search(h.search)
+		endif
 		normal zt
 	endif
 	setlocal nomodifiable nomodified
@@ -128,6 +131,7 @@ endfunction
 "	'line':		1,			OPTIONAL
 "	'col':		1,			OPTIONAL
 "	'tags':		'/path/to/tags',	OPTIONAL
+"	'search':	'regex',		OPTIONAL
 "	'docft':	'perl',			OPTIONAL
 " }
 function s:GetHandle(topic, ft)
