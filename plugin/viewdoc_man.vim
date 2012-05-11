@@ -11,7 +11,7 @@ endif
 let g:loaded_viewdoc_man = 1
 
 """ Constants
-let s:re_mansect = '\([0-9n]p\?\)'
+let s:re_mansect = '\([0-9]p\?\|[nlp]\|tcl\)'
 
 """ Options
 if !exists('g:viewdoc_man_cmd')
@@ -24,8 +24,8 @@ command -bar -bang -nargs=1 -complete=custom,s:CompleteMan ViewDocMan
 	\ call ViewDoc('<bang>'=='' ? 'new' : 'doc', <f-args>, 'man')
 " - abbrev
 if !exists('g:no_plugin_abbrev') && !exists('g:no_viewdoc_abbrev')
-	cabbrev <expr> man      getcmdtype()==':' && getcmdline()=='man'  ? 'ViewDocMan'  : 'man'
-	cabbrev <expr> man!     getcmdtype()==':' && getcmdline()=='man!' ? 'ViewDocMan'  : 'man!'
+	cnoreabbrev <expr> man      getcmdtype()==':' && getcmdline()=='man'  ? 'ViewDocMan'  : 'man'
+	cnoreabbrev <expr> man!     getcmdtype()==':' && getcmdline()=='man!' ? 'ViewDocMan'  : 'man!'
 endif
 
 """ Handlers
@@ -33,13 +33,13 @@ endif
 " let h = ViewDoc_man('time')
 " let h = ViewDoc_man('time(2)')
 " let h = ViewDoc_man('2 time')
-function g:ViewDoc_man(topic, ...)
+function ViewDoc_man(topic, ...)
 	let sect = ''
 	let name = a:topic
-	let m = matchlist(name, '('.s:re_mansect.')$')
+	let m = matchlist(name, '('.s:re_mansect.')\.\?$')
 	if (len(m))
 		let sect = m[1]
-		let name = substitute(name, '('.s:re_mansect.')$', '', '')
+		let name = substitute(name, '('.s:re_mansect.')\.\?$', '', '')
 	endif
 	let m = matchlist(name, '^'.s:re_mansect.'\s\+')
 	if (len(m))
@@ -51,7 +51,8 @@ function g:ViewDoc_man(topic, ...)
 		\ }
 endfunction
 
-let g:ViewDoc_DEFAULT = function('g:ViewDoc_man')
+let g:ViewDoc_man = function('ViewDoc_man')
+let g:ViewDoc_DEFAULT = function('ViewDoc_man')
 
 
 """ Internal

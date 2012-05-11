@@ -1,6 +1,6 @@
 " Maintainer: Alex Efros <powerman-asdf@ya.ru>
-" Version: 1.2
-" Last Modified: Jan 19, 2012
+" Version: 1.3
+" Last Modified: May 11, 2012
 " License: This file is placed in the public domain.
 " URL: http://www.vim.org/scripts/script.php?script_id=3893
 " Description: Flexible viewer for any documentation (help/man/perldoc/etc.)
@@ -37,14 +37,14 @@ command -bar -bang -nargs=+ ViewDoc
 	\ call ViewDoc('<bang>'=='' ? 'new' : 'doc', <f-args>)
 " - abbrev
 if !exists('g:no_plugin_abbrev') && !exists('g:no_viewdoc_abbrev')
-	cabbrev <expr> doc      getcmdtype()==':' && getcmdline()=='doc'  ? 'ViewDoc'	  : 'doc'
-	cabbrev <expr> doc!     getcmdtype()==':' && getcmdline()=='doc!' ? 'ViewDoc!'	  : 'doc!'
+	cnoreabbrev <expr> doc      getcmdtype()==':' && getcmdline()=='doc'  ? 'ViewDoc'  : 'doc'
+	cnoreabbrev <expr> doc!     getcmdtype()==':' && getcmdline()=='doc!' ? 'ViewDoc!' : 'doc!'
 endif
 " - map
 if !exists('g:no_plugin_maps') && !exists('g:no_viewdoc_maps')
-	imap <unique> <F1>	<C-O>:call ViewDoc('new', '<cword>')<CR>
-	nmap <unique> <F1>	:call ViewDoc('new', '<cword>')<CR>
-	nmap <unique> K		:call ViewDoc('doc', '<cword>')<CR>
+	inoremap <unique> <F1>	<C-O>:call ViewDoc('new', '<cword>')<CR>
+	nnoremap <unique> <F1>	:call ViewDoc('new', '<cword>')<CR>
+	nnoremap <unique> K		:call ViewDoc('doc', '<cword>')<CR>
 endif
 " - function
 " call ViewDoc('new', '<cword>')		auto-detect context/syntax and file type
@@ -64,12 +64,12 @@ function ViewDoc(target, topic, ...)
 	if exists('h.cmd')
 		execute 'silent 0r ! ( ' . h.cmd . ' ) 2>/dev/null'
 		silent $d
-		execute 'normal ' . (exists('h.line') ? h.line : 1) . 'G'
-		execute 'normal ' . (exists('h.col')  ? h.col  : 1) . '|'
+		execute 'normal! ' . (exists('h.line') ? h.line : 1) . 'G'
+		execute 'normal! ' . (exists('h.col')  ? h.col  : 1) . '|'
 		if exists('h.search')
 			call search(h.search)
 		endif
-		normal zt
+		normal! zt
 	endif
 	setlocal nomodifiable nomodified
 
@@ -88,10 +88,10 @@ function ViewDoc(target, topic, ...)
 	inoremap <silent> <buffer> <C-T>	<C-O>:call <SID>Prev()<CR>
 	nnoremap <silent> <buffer> <C-]>	:call <SID>Next()<CR>
 	nnoremap <silent> <buffer> <C-T>	:call <SID>Prev()<CR>
-	imap <silent> <buffer> <CR>		<C-O><C-]>
-	imap <silent> <buffer> <BS>		<C-O><C-T>
-	nmap <silent> <buffer> <CR>		<C-]>
-	nmap <silent> <buffer> <BS>		<C-T>
+	imap	 <silent> <buffer> <CR>		<C-O><C-]>
+	imap	 <silent> <buffer> <BS>		<C-O><C-T>
+	nmap	 <silent> <buffer> <CR>		<C-]>
+	nmap	 <silent> <buffer> <BS>		<C-T>
 
 	let is_empty = line('$') == 1 && col('$') == 1
 
@@ -108,9 +108,9 @@ function ViewDoc(target, topic, ...)
 		if prev_tabpagenr != tabpagenr()
 			execute 'tabnext ' . prev_tabpagenr
 		elseif winnr('$') > 1
-			execute "normal \<C-W>p"
+			wincmd p
 		else
-			execute "normal \<C-^>"
+			execute "normal! \<C-^>"
 		endif
 	endif
 
@@ -151,7 +151,7 @@ endfunction
 function s:Next()
 	let b:stack = exists('b:stack') ? b:stack + 1	: 1
 	let docft   = exists('b:docft') ? b:docft	: &ft
-	normal msHmt`s
+	normal! msHmt`s
 	call ViewDoc('inplace', '<cword>', docft)
 endfunction
 
@@ -161,7 +161,7 @@ function s:Prev()
 		setlocal modifiable
 		undo
 		setlocal nomodifiable
-		normal 'tzt`s
+		normal! 'tzt`s
 		" XXX man page syntax _partially_ switched off after Prev(),
 		" I've no idea why this happens, so just force it again
 		if exists('g:syntax_on')
@@ -193,7 +193,8 @@ endfunction
 " Close buffer with doc, and optionally move to previous tab.
 " Quit if closing last buffer.
 function s:CloseBuf()
-	if len(filter( range(1,bufnr('$')), 'buflisted(v:val)' )) == 1
+	let cond = g:viewdoc_only ? 'buflisted(v:val)' : 'buflisted(v:val) && bufloaded(v:val)'
+	if len(filter( range(1,bufnr('$')), cond )) == 1
 		q
 	elseif winnr('$') > 1 || !g:viewdoc_prevtabonclose
 		bwipeout

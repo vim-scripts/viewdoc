@@ -17,13 +17,13 @@ command -bar -bang -nargs=1 -complete=custom,s:CompletePerl ViewDocPerl
 	\ call ViewDoc('<bang>'=='' ? 'new' : 'doc', <f-args>, 'perl')
 " - abbrev
 if !exists('g:no_plugin_abbrev') && !exists('g:no_viewdoc_abbrev')
-	cabbrev <expr> perldoc  getcmdtype()==':' && getcmdline()=='perldoc'  ? 'ViewDocPerl'  : 'perldoc'
-	cabbrev <expr> perldoc! getcmdtype()==':' && getcmdline()=='perldoc!' ? 'ViewDocPerl'  : 'perldoc!'
+	cnoreabbrev <expr> perldoc  getcmdtype()==':' && getcmdline()=='perldoc'  ? 'ViewDocPerl'  : 'perldoc'
+	cnoreabbrev <expr> perldoc! getcmdtype()==':' && getcmdline()=='perldoc!' ? 'ViewDocPerl'  : 'perldoc!'
 endif
 
 """ Handlers
 
-function g:ViewDoc_perldoc(topic, filetype, synid, ctx)
+function ViewDoc_perldoc(topic, filetype, synid, ctx)
 	let h = { 'ft':		'perldoc',
 		\ 'topic':	a:topic,
 		\ }
@@ -80,7 +80,8 @@ function g:ViewDoc_perldoc(topic, filetype, synid, ctx)
 	return h
 endfunction
 
-let g:ViewDoc_perl = function('g:ViewDoc_perldoc')
+let g:ViewDoc_perl = function('ViewDoc_perldoc')
+let g:ViewDoc_perldoc = function('ViewDoc_perldoc')
 
 
 """ Internal

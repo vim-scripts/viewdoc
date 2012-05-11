@@ -17,13 +17,13 @@ command -bar -bang -nargs=1 -complete=help ViewDocHelp
 	\ call ViewDoc('<bang>'=='' ? 'new' : 'doc', <f-args>, 'help')
 " - abbrev
 if !exists('g:no_plugin_abbrev') && !exists('g:no_viewdoc_abbrev')
-	cabbrev <expr> help     getcmdtype()==':' && getcmdline()=='help'  ? 'ViewDocHelp' : 'help'
-	cabbrev <expr> help!    getcmdtype()==':' && getcmdline()=='help!' ? 'ViewDocHelp' : 'help!'
+	cnoreabbrev <expr> help     getcmdtype()==':' && getcmdline()=='help'  ? 'ViewDocHelp' : 'help'
+	cnoreabbrev <expr> help!    getcmdtype()==':' && getcmdline()=='help!' ? 'ViewDocHelp' : 'help!'
 endif
 
 """ Handlers
 
-function g:ViewDoc_help(topic, filetype, synid, ctx)
+function ViewDoc_help(topic, filetype, synid, ctx)
 	let h = { 'ft':		'help',
 		\ 'topic':	a:topic,
 		\ }
@@ -36,22 +36,24 @@ function g:ViewDoc_help(topic, filetype, synid, ctx)
 	endif
 	try
 		let savetabnr	= tabpagenr()
-		execute 'tab help ' . h.topic
-		let helpfile	= bufname(bufnr(''))
-		let h.cmd	= printf('cat %s', shellescape(helpfile,1))
+		execute 'noautocmd tab help ' . h.topic
+		let helpfile	= expand('%:p')
+		let cat		= helpfile =~? 'gz$' ? 'zcat' : 'cat'
+		let h.cmd	= printf('%s %s', cat, shellescape(helpfile,1))
 		let h.line	= line('.')
 		let h.col	= col('.')
 		let h.tags	= substitute(helpfile, '/[^/]*$', '/tags', '')
-		tabclose
-		execute 'tabnext ' . savetabnr
+		noautocmd tabclose
+		execute 'noautocmd tabnext ' . savetabnr
 	catch
 	endtry
 	return h
 endfunction
 
-let g:ViewDoc_vim = function('g:ViewDoc_help')
+let g:ViewDoc_help = function('ViewDoc_help')
+let g:ViewDoc_vim = function('ViewDoc_help')
 
-function g:ViewDoc_help_custom(topic, ft, ...)
+function ViewDoc_help_custom(topic, ft, ...)
 	let h = { 'ft':		'help',
 		\ 'docft':	a:ft,
 		\ }
