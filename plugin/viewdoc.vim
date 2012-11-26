@@ -139,7 +139,16 @@ function s:GetHandle(topic, ft)
 	let topic = cword ? expand('<cword>')		: a:topic
 	let synid = cword ? synID(line('.'),col('.'),1)	: 0
 
-	let handler = exists('*g:ViewDoc_{a:ft}') ? a:ft : 'DEFAULT'
+	let handler = exists('g:ViewDoc_{a:ft}') ? a:ft : 'DEFAULT'
+	if type(g:ViewDoc_{handler}) == type("")
+		let name = g:ViewDoc_{handler}
+		if exists('*{name}')
+			unlet g:ViewDoc_{handler}
+			let g:ViewDoc_{handler} = function(name)
+		else
+			echohl ErrorMsg | echo 'No such function:' name | echohl None | sleep 2
+		endif
+	endif
 	let h = g:ViewDoc_{handler}(topic, a:ft, synid, cword)
 
 	let h.topic	= exists('h.topic')	? h.topic	: topic
@@ -162,11 +171,6 @@ function s:Prev()
 		undo
 		setlocal nomodifiable
 		normal! 'tzt`s
-		" XXX man page syntax _partially_ switched off after Prev(),
-		" I've no idea why this happens, so just force it again
-		if exists('g:syntax_on')
-			syntax on
-		endif
 	endif
 endfunction
 

@@ -11,14 +11,40 @@ endif
 let g:loaded_viewdoc_pydoc = 1
 
 
+""" Options
+if !exists('g:viewdoc_pydoc_cmd')
+	let g:viewdoc_pydoc_cmd='/usr/bin/pydoc'	" user may want '/usr/bin/pydoc3.2'
+endif
+
+""" Interface
+" - command
+command -bar -bang -nargs=1 -complete=custom,s:CompletePydoc ViewDocPydoc
+	\ call ViewDoc('<bang>'=='' ? 'new' : 'doc', <f-args>, 'pydoc')
+" - abbrev
+if !exists('g:no_plugin_abbrev') && !exists('g:no_viewdoc_abbrev')
+	cnoreabbrev <expr> pydoc    getcmdtype()==':' && getcmdline()=='pydoc'  ? 'ViewDocPydoc'  : 'pydoc'
+	cnoreabbrev <expr> pydoc!   getcmdtype()==':' && getcmdline()=='pydoc!' ? 'ViewDocPydoc'  : 'pydoc!'
+endif
+
 """ Handlers
 
 function ViewDoc_pydoc(topic, ...)
-	return	{ 'cmd':	printf('pydoc %s', shellescape(a:topic,1)),
+	return	{ 'cmd':	printf('%s %s', g:viewdoc_pydoc_cmd, shellescape(a:topic,1)),
 		\ 'ft':		'pydoc',
 		\ }
 endfunction
 
-let g:ViewDoc_pydoc = function('ViewDoc_pydoc')
+let g:ViewDoc_pydoc  = function('ViewDoc_pydoc')
 let g:ViewDoc_python = function('ViewDoc_pydoc')
+
+
+""" Internal
+
+" Autocomplete topics, keywords and modules.
+function s:CompletePydoc(ArgLead, CmdLine, CursorPos)
+	if(!exists('s:complete_cache'))
+		let s:complete_cache = system('echo $(for x in topics keywords modules; do echo $(pydoc $x 2>/dev/null | sed ''s/^$/\a/'') | cut -d $''\a'' -f 3; done) | sed ''s/ /\n/g''')
+	endif
+	return s:complete_cache
+endfunction
 
