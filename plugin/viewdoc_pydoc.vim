@@ -29,7 +29,7 @@ endif
 """ Handlers
 
 function ViewDoc_pydoc(topic, ...)
-	return	{ 'cmd':	printf('%s %s', g:viewdoc_pydoc_cmd, shellescape(a:topic,1)),
+	return	{ 'cmd':	printf('%s %s | grep -v "no Python documentation found"', g:viewdoc_pydoc_cmd, shellescape(a:topic,1)),
 		\ 'ft':		'pydoc',
 		\ }
 endfunction
@@ -43,7 +43,9 @@ let g:ViewDoc_python = function('ViewDoc_pydoc')
 " Autocomplete topics, keywords and modules.
 function s:CompletePydoc(ArgLead, CmdLine, CursorPos)
 	if(!exists('s:complete_cache'))
+		call ViewDoc_SetShellToBash()
 		let s:complete_cache = system('echo $(for x in topics keywords modules; do echo $(pydoc $x 2>/dev/null | sed ''s/^$/\a/'') | cut -d $''\a'' -f 3; done) | sed ''s/ /\n/g''')
+		call ViewDoc_RestoreShell()
 	endif
 	return s:complete_cache
 endfunction
