@@ -15,7 +15,7 @@ let s:re_mansect = '\([0-9a-z]\+\)'
 
 """ Options
 if !exists('g:viewdoc_man_cmd')
-	let g:viewdoc_man_cmd='/usr/bin/man'	" user may want 'LANG=en /usr/bin/man'
+	let g:viewdoc_man_cmd='man'	        " user may want 'LANG=en man'
 endif
 
 """ Interface
@@ -46,7 +46,7 @@ function s:ViewDoc_man(topic, ...)
 		let sect = '-S '.m[1]
 		let name = substitute(name, '^'.s:re_mansect.'\s\+', '', '')
 	endif
-	return	{ 'cmd':	printf('%s %s %s | sed "s/ \xB7 / * /" | col -b', g:viewdoc_man_cmd, sect, shellescape(name,1)),
+	return	{ 'cmd':	printf('MANWIDTH={{winwidth}} %s %s %s | sed "s/ \xB7 / * /" | col -b', g:viewdoc_man_cmd, sect, shellescape(name,1)),
 		\ 'ft':		'man',
 		\ }
 endfunction
